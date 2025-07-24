@@ -26,16 +26,14 @@ Documento* eliminados = nullptr;
 // Funciones principales
 void agregarDocumento(string nombre, string tipo, Prioridad prioridad);
 void eliminarDocumento(string nombre);
-void verCola();
-// Podriamos reeemplazar estos tres con la opcion ver estado de documentos
-void verImpresos();
-void verEliminados();
-void reporteFinal(Documento* documentos); // Al salir del sistema imprimir el reporte final de documentos impresos y eliminados
+void verColaDeImpresion();
+void verEstadoDeDocumentos();
 
 // Funciones secundarias
 Documento* crearDocumento(string nombre, string tipo, Prioridad prioridad);
 void agregarAImpresos(Documento* documento);
 void agregarAEliminados(Documento* documento);
+void imprimirCola(Documento* documentos, int i);
 
 int main() {
     SetConsoleOutputCP (65001);
@@ -92,11 +90,14 @@ void eliminarDocumento(string nombre) {
         anterior->siguiente = actual->siguiente;
     }
 
+    // Agregamos el documento a la cola de eliminados
+    agregarAEliminados(actual);
+
     // Eliminamos el documento
     delete actual;
 }
 
-void verCola() {
+void verColaDeImpresion() {
     // Verificamos si la cola esta vacía
     if (!cola) {
         cout<<"La cola está vacía."<<endl;
@@ -104,44 +105,21 @@ void verCola() {
     }
 
     // Imprimimos la cola de impresión
-    Documento* actual = cola;
-    for (int i = 0; actual; i++) {
-        cout<<i<<". "<<actual->nombre<<" "<<"["<<actual->tipo<<"]"<<" "<<"("<<static_cast<int>(actual->prioridad)<<")"<<endl;
-    }
+    imprimirCola(cola);
 }
 
-void verImpresos() {
-    // Verificamos si la cola esta vacía
-    if (!impresos) {
-        cout<<"La cola está vacía."<<endl;
-        return;
-    }
+void verEstadoDeDocumentos() {
+    cout<<"-> Documentos en cola: "<<endl;
+    if (!cola) cout<<"No hay documentos en cola."<<endl; return;
+    imprimirCola(cola);
 
-    // Imprimimos el reporte de documentos impresos
-    Documento* actual = impresos;
-    for (int i = 0; actual; i++) {
-        cout<<i<<". "<<actual->nombre<<" "<<"["<<actual->tipo<<"]"<<" "<<"("<<static_cast<int>(actual->prioridad)<<")"<<endl;
-    }
-}
+    cout<<"-> Documentos impresos: "<<endl;
+    if (!cola) cout<<"No hay documentos impresos."<<endl; return;
+    imprimirCola(impresos);
 
-void verEliminados() {
-    // Verificamos si la cola esta vacía
-    if (!eliminados) {
-        cout<<"La cola está vacía."<<endl;
-        return;
-    }
-
-    // Imprimimos el reporte de documentos eliminados
-    Documento* actual = eliminados;
-    for (int i = 0; actual; i++) {
-        cout<<i<<". "<<actual->nombre<<" "<<"["<<actual->tipo<<"]"<<" "<<"("<<static_cast<int>(actual->prioridad)<<")"<<endl;
-    }
-}
-
-void reporteFinal(Documento* documento, int i = 1) {
-    if (!documento) return;
-    cout<<i<<". "<<documento->nombre<<" "<<"["<<documento->tipo<<"]"<<" "<<"("<<static_cast<int>(documento->prioridad)<<")"<<endl;
-    reporteFinal(documento->siguiente, ++i);
+    cout<<"-> Documentos eliminados: "<<endl;
+    if (!cola) cout<<"No hay documentos eliminados."<<endl; return;
+    imprimirCola(eliminados);
 }
 
 // Funciones secundarias
@@ -153,6 +131,14 @@ Documento* crearDocumento(string nombre, string tipo, Prioridad prioridad) {
     nuevo->prioridad = prioridad;
     nuevo->siguiente = nullptr;
     return nuevo;
+}
+
+void imprimirCola(Documento* documento, int i = 1) {
+    // Caso base de la recursión
+    if (!documento) return;
+    
+    cout<<i<<". "<<documento->nombre<<" "<<"["<<documento->tipo<<"]"<<" "<<"("<<static_cast<int>(documento->prioridad)<<")"<<endl;
+    imprimirCola(documento->siguiente, ++i);
 }
 
 void agregarAImpresos(Documento* documento) {
