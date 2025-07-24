@@ -1,14 +1,8 @@
 #include <iostream>
+#include <string>
 #include <windows.h>
 
 using namespace std;
-
-// Prioridad
-enum class Prioridad {
-    Alta = 1,
-    Media,
-    Baja
-};
 
 // Estructura de documento
 struct Documento {
@@ -16,6 +10,13 @@ struct Documento {
     string tipo;
     Prioridad prioridad;
     Documento* siguiente;
+};
+
+// Enumeración de prioridad
+enum class Prioridad {
+    Alta = 1,
+    Media,
+    Baja
 };
 
 // Colas a manejar en el sistema
@@ -182,6 +183,6 @@ Prioridad seleccionarPrioridad() {
     cout<<"Seleccione una opción (1-3): ";
     cin>>opcion;
 
-    // Retornamos la prioridad del Documento
+    // Retornamos la prioridad del documento
     return arr[opcion - 1];
 }
