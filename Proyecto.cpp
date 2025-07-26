@@ -3,6 +3,7 @@
 #include <limits>
 #include <thread> // Para hilos
 #include <mutex> // Para mutex
+#include <atomic>
 #include <chrono>
 #include <windows.h>
 
@@ -12,6 +13,7 @@ using namespace std;
 #define pausar system("pause");
 
 mutex mtx; // Definimos un mutex global para evitar errores entre los hilos
+atomic<bool> detenerHilo(false); // Definimos una variable booleana protegida para detener el hilo de impresión
 
 // Enumeración de prioridad
 enum class Prioridad {
@@ -48,12 +50,13 @@ void imprimirCola(Documento* documento, int i = 1);
 string asignarNombre();
 string seleccionarTipo();
 Prioridad seleccionarPrioridad();
-
-// Hilo de impresión automática
-thread hiloDeImpresion(impresionAutomatica);
+void limpiarCola(Documento*& inicio);
 
 int main() {
     SetConsoleOutputCP (65001);
+
+    // Iniciamos el hilo de impresión automática
+    thread hiloDeImpresion(impresionAutomatica);
 
     int opcion;
     do {
@@ -105,12 +108,20 @@ int main() {
                 cout<<"\nSaliendo del sistema..."<<endl;
                 break;
             default:
-                cout<<"\nOpcion inválida\n"<<endl;
+                cout<<"\nOpcion inválida"<<endl;
                 break;
         }
         cout<<"\n";
         pausar; // Esperamos a que el usuario presione una tecla
     } while (opcion != 5);
+
+    detenerHilo = true; // Para que el hilo de impresión se detenga
+    hiloDeImpresion.join(); // Esperamos que el hilo termine correctamente
+
+    // Liberamos la memoria utilizada
+    limpiarCola(cola);
+    limpiarCola(impresos);
+    limpiarCola(eliminados);
 
     return 0;
 }
@@ -210,7 +221,7 @@ void verEstadoDeDocumentos() {
 }
 
 void impresionAutomatica() {
-    while (true) {
+    while (!detenerHilo) {
         // Intervalo de tiempo para imprimir un documento
         this_thread::sleep_for(chrono::seconds(20));
 
@@ -311,4 +322,14 @@ Prioridad seleccionarPrioridad() {
 
     // Retornamos la prioridad del documento
     return arr[opcion - 1];
+}
+
+void limpiarCola(Documento*& inicio) {
+    while (inicio) {
+        Documento* temp = inicio;
+        inicio = inicio->siguiente;
+
+        // Liberamos el bloque de memoria al que apunta el puntero
+        delete temp;
+    }
 }
