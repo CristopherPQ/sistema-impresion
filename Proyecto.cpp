@@ -36,6 +36,7 @@ Documento* crearDocumento(string nombre, string tipo, Prioridad prioridad);
 void agregarAImpresos(Documento* documento);
 void agregarAEliminados(Documento* documento);
 void imprimirCola(Documento* documento, int i = 1);
+string asignarNombre();
 string seleccionarTipo();
 Prioridad seleccionarPrioridad();
 
@@ -74,8 +75,7 @@ int main() {
         // Evaluamos la opción seleccionada
         switch (opcion) {
             case 1:
-                cout<<"\nNombre del documento: ";
-                getline(cin, nombre);
+                nombre = asignarNombre();
                 tipo = seleccionarTipo();
                 prioridad = seleccionarPrioridad();
                 agregarDocumento(nombre, tipo, prioridad);
@@ -215,6 +215,31 @@ void agregarAImpresos(Documento* documento) {
 void agregarAEliminados(Documento* documento) {
     documento->siguiente = eliminados;
     eliminados = documento;
+}
+
+string asignarNombre() {
+    string nombre;
+
+    // Pedimos el nommbre del documento
+    cout<<"\nNombre del documento: ";
+    getline(cin, nombre);
+
+    do {
+        // Verificamos si el nombre está en uso dentro de la cola de impresión
+        Documento* actual = cola;
+        while (actual && actual->nombre != nombre) {
+            actual = actual->siguiente;
+        }
+
+        if (!actual) {
+            break;
+        }
+
+        cout<<"Nombre en uso, ingrese otro nombre: ";
+        getline(cin, nombre);
+    } while (true);
+
+    return nombre;
 }
 
 string seleccionarTipo() {
