@@ -1,9 +1,17 @@
 #include <iostream>
 #include <string>
 #include <limits>
+#include <thread> // Para hilos
+#include <mutex> // Para mutex
+#include <chrono>
 #include <windows.h>
 
 using namespace std;
+
+#define limpiar system("cls");
+#define pausar system("pause");
+
+mutex mtx; // Definimos un mutex global para evitar errores entre los hilos
 
 // Enumeración de prioridad
 enum class Prioridad {
@@ -27,9 +35,10 @@ Documento* eliminados = nullptr;
 
 // Funciones principales
 void agregarDocumento(string nombre, string tipo, Prioridad prioridad);
-void eliminarDocumento(string nombre);
+void eliminarDocumento();
 void verColaDeImpresion();
 void verEstadoDeDocumentos();
+void impresionAutomatica();
 
 // Funciones secundarias
 Documento* crearDocumento(string nombre, string tipo, Prioridad prioridad);
@@ -40,12 +49,15 @@ string asignarNombre();
 string seleccionarTipo();
 Prioridad seleccionarPrioridad();
 
+// Hilo de impresión automática
+thread hiloDeImpresion(impresionAutomatica);
+
 int main() {
     SetConsoleOutputCP (65001);
 
     int opcion;
     do {
-        system("cls"); // Limpiamos la terminal
+        limpiar; // Limpiamos la terminal
 
         // Mostramos el menu de inicio
         cout<<"\n\t-- SISTEMA DE IMPRESION --\n\n";
@@ -70,7 +82,7 @@ int main() {
         string nombre, tipo;
         Prioridad prioridad;
 
-        system("cls");
+        limpiar;
 
         // Evaluamos la opción seleccionada
         switch (opcion) {
@@ -81,9 +93,7 @@ int main() {
                 agregarDocumento(nombre, tipo, prioridad);
                 break;
             case 2:
-                cout<<"\nNombre del documento: ";
-                getline(cin, nombre);
-                eliminarDocumento(nombre);
+                eliminarDocumento();
                 break;
             case 3:
                 verColaDeImpresion();
@@ -92,13 +102,14 @@ int main() {
                 verEstadoDeDocumentos();
                 break;
             case 5:
-                cout<<"\n Saliendo del sistema..."<<endl;
+                cout<<"\nSaliendo del sistema..."<<endl;
                 break;
             default:
-                cout<<"\n Opcion inválida\n"<<endl;
+                cout<<"\nOpcion inválida\n"<<endl;
                 break;
         }
-        system("pause"); // Esperamos a que el usuario presione una tecla
+        cout<<"\n";
+        pausar; // Esperamos a que el usuario presione una tecla
     } while (opcion != 5);
 
     return 0;
@@ -108,6 +119,8 @@ int main() {
 
 void agregarDocumento(string nombre, string tipo, Prioridad prioridad) {
     Documento* nuevo = crearDocumento(nombre, tipo, prioridad);
+
+    lock_guard<mutex> lock(mtx);
 
     // Insertamos el documento según su nivel de prioridad
     if (!cola || nuevo->prioridad < cola->prioridad) {
@@ -126,12 +139,19 @@ void agregarDocumento(string nombre, string tipo, Prioridad prioridad) {
     cout<<"\n-> Documento '"<<nuevo->nombre<<"' agregado a la cola con éxito."<<endl;
 }
 
-void eliminarDocumento(string nombre) {
+void eliminarDocumento() {
+    lock_guard<mutex> lock(mtx);
+
+    string nombre;
+
     // Verificamos si la cola esta vacía
     if (!cola) {
         cout<<"\n-> La cola está vacía."<<endl;
         return;
     }
+
+    cout<<"\nNombre del documento: ";
+    getline(cin, nombre);
 
     // Buscamos el nodo a eliminar
     Documento* actual = cola;
@@ -153,39 +173,59 @@ void eliminarDocumento(string nombre) {
         anterior->siguiente = actual->siguiente;
     }
 
-    // Agregamos el documento a la cola de eliminados
+    // Movemos el documento a la cola de eliminados
     agregarAEliminados(actual);
 
     cout<<"\n-> Documento '"<<actual->nombre<<"' eliminado exitosamente."<<endl;
-
-    // Eliminamos el documento
-    delete actual;
 }
 
 void verColaDeImpresion() {
+    lock_guard<mutex> lock(mtx);
+
     // Verificamos si la cola esta vacía
     if (!cola) {
-        cout<<"-> La cola de impresión está vacía."<<endl;
+        cout<<"\n-> La cola de impresión está vacía."<<endl;
         return;
     }
 
     // Imprimimos la cola de impresión
-    cout<<"-> Cola de impresión actual: "<<endl;
+    cout<<"\n-> Cola de impresión actual: \n"<<endl;
     imprimirCola(cola);
 }
 
 void verEstadoDeDocumentos() {
+    lock_guard<mutex> lock(mtx);
+
     cout<<"\n-> Documentos en cola: "<<endl;
-    if (!cola) cout<<"No hay documentos en cola."<<endl;
+    if (!cola) cout<<"\tNo hay documentos en cola."<<endl;
     imprimirCola(cola);
 
     cout<<"\n-> Documentos impresos: "<<endl;
-    if (!impresos) cout<<"No hay documentos impresos."<<endl;
+    if (!impresos) cout<<"\tNo hay documentos impresos."<<endl;
     imprimirCola(impresos);
 
     cout<<"\n-> Documentos eliminados: "<<endl;
-    if (!eliminados) cout<<"No hay documentos eliminados."<<endl;
+    if (!eliminados) cout<<"\tNo hay documentos eliminados."<<endl;
     imprimirCola(eliminados);
+}
+
+void impresionAutomatica() {
+    while (true) {
+        // Intervalo de tiempo para imprimir un documento
+        this_thread::sleep_for(chrono::seconds(20));
+
+        // Usamos mutex antes de modificar la cola
+        lock_guard<mutex> lock(mtx);
+
+        // Imprimimos si la cola no esta vacía
+        if (cola) {
+            Documento* impreso = cola;
+            cola = cola->siguiente;
+
+            // Movemos el documento a la cola de impresos
+            agregarAImpresos(impreso);
+        }
+    }
 }
 
 // Funciones secundarias
@@ -203,7 +243,7 @@ void imprimirCola(Documento* documento, int i) {
     // Caso base de la recursión
     if (!documento) return;
 
-    cout<<i<<". "<<documento->nombre<<" "<<"["<<documento->tipo<<"]"<<" "<<"("<<static_cast<int>(documento->prioridad)<<")"<<endl;
+    cout<<"\t"<<i<<". "<<documento->nombre<<" "<<"["<<documento->tipo<<"]"<<" "<<"("<<static_cast<int>(documento->prioridad)<<")"<<endl;
     imprimirCola(documento->siguiente, i + 1);
 }
 
@@ -225,6 +265,8 @@ string asignarNombre() {
     getline(cin, nombre);
 
     do {
+        lock_guard<mutex> lock(mtx);
+
         // Verificamos si el nombre está en uso dentro de la cola de impresión
         Documento* actual = cola;
         while (actual && actual->nombre != nombre) {
@@ -239,6 +281,7 @@ string asignarNombre() {
         getline(cin, nombre);
     } while (true);
 
+    // Retornamos el nombre válido
     return nombre;
 }
 
