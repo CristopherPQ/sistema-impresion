@@ -272,8 +272,18 @@ string asignarNombre() {
     string nombre;
 
     // Pedimos el nommbre del documento
-    cout<<"\nNombre del documento: ";
-    getline(cin, nombre);
+    do {
+        cout<<"\nNombre del documento (sin espacios): ";
+        getline(cin, nombre);
+
+        // Validamos que no tenga espacios
+        for (int i = 0; i < nombre.length(); i++) {
+            if (isspace(nombre[i])) {
+                nombre = "";
+                break;
+            }
+        }
+    } while (nombre.empty());
 
     do {
         lock_guard<mutex> lock(mtx);
@@ -288,7 +298,7 @@ string asignarNombre() {
             break;
         }
 
-        cout<<"Nombre en uso, ingrese otro nombre: ";
+        cout<<"\nNombre en uso, ingrese otro nombre: ";
         getline(cin, nombre);
     } while (true);
 
@@ -301,10 +311,20 @@ string seleccionarTipo() {
     string arr[] = {"PDF", "DOCX", "JPEG"};
 
     int opcion;
+
     cout<<"\n-- Tipo de Documento --\n";
     cout<<" 1. PDF\n 2. DOCX \n 3. JPEG\n";
-    cout<<"Seleccione una opción (1-3): ";
-    cin>>opcion;
+
+    do {
+        cout<<"Seleccione una opción (1-3): ";
+        cin>>opcion;
+
+        if (cin.fail()) {
+            cin.clear();
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            continue;
+        }
+    } while (opcion < 1 || opcion > 3);
 
     // Retornamos el tipo de documento
     return arr[opcion - 1];
@@ -317,8 +337,17 @@ Prioridad seleccionarPrioridad() {
     int opcion;
     cout<<"\n-- Prioridad del Documento --\n";
     cout<<" 1. Alta\n 2. Media \n 3. Baja\n";
-    cout<<"Seleccione una opción (1-3): ";
-    cin>>opcion;
+
+    do {
+        cout<<"Seleccione una opción (1-3): ";
+        cin>>opcion;
+        
+        if (cin.fail()) {
+            cin.clear();
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            continue;
+        }
+    } while (opcion < 1 || opcion > 3);
 
     // Retornamos la prioridad del documento
     return arr[opcion - 1];
