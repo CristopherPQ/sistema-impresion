@@ -132,7 +132,7 @@ int main() {
 void impresionAutomatica() {
     while (!detenerHilo) {
         // Intervalo de tiempo para imprimir un documento
-        this_thread::sleep_for(chrono::seconds(20));
+        this_thread::sleep_for(chrono::seconds(30));
 
         // Usamos mutex antes de modificar la cola
         lock_guard<mutex> lock(mtx);
@@ -255,10 +255,19 @@ void imprimirCola(Documento* documento, int i) {
     // Caso base de la recursión
     if (!documento) return;
 
-    cout<<"\t"<<i<<". "
-        <<left<<setw(20)<<documento->nombre<<"["<<setw(13)<<documento->tipo<<"]"
-        <<right<<setw(5)<<"("<<static_cast<int>(documento->prioridad)<<")"<<endl;
+    cout<<"\t"<<i<<". "<<left<<setw(20)<<documento->nombre<<"[";
 
+    if (documento->tipo == "PDF") {
+        cout<<"\033[31m"<<setw(4)<<"PDF"<<"\033[0m";
+    } else if (documento->tipo == "DOCX") {
+        cout<<"\033[34m"<<setw(4)<<"DOCX"<<"\033[0m";
+    } else if (documento->tipo == "JPEG") {
+        cout<<"\033[33m"<<setw(4)<<"JPEG"<<"\033[0m";
+    }
+
+    cout<<"]"<< right<<setw(15)<<"(Prioridad: "<<static_cast<int>(documento->prioridad)<<")\n";
+
+    // Recursión
     imprimirCola(documento->siguiente, i + 1);
 }
 
@@ -312,7 +321,7 @@ string asignarNombre() {
 
 string seleccionarTipo() {
     // Arreglo con los tipos de documento
-    string arr[] = {"\033[31mPDF\033[0m", "\033[34mDOCX\033[0m", "\033[33mJPEG\033[0m"};
+    string arr[] = {"PDF", "DOCX", "JPEG"};
 
     int opcion;
 
